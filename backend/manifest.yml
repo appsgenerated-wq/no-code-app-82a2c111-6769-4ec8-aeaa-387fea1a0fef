@@ -1,0 +1,154 @@
+name: MoonDash
+
+entities:
+  User:
+    authenticable: true
+    properties:
+      - name
+      - name: email
+        type: email
+      - name: lunarAddress
+        type: string
+      - name: role
+        type: choice
+        options:
+          values: [customer, driver, admin]
+        default: customer
+    policies:
+      create:
+        - access: admin
+      signup:
+        - access: public
+      read:
+        - access: restricted
+          allow: User
+          condition: self
+        - access: admin
+      update:
+        - access: restricted
+          allow: User
+          condition: self
+        - access: admin
+      delete:
+        - access: admin
+
+  LunarOutpost:
+    properties:
+      - name: name
+        type: string
+      - name: cuisine
+        type: string
+      - name: menuImage
+        type: image
+        options:
+          sizes:
+            thumbnail:
+              width: 400
+              height: 200
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: public
+      update:
+        - access: admin
+      delete:
+        - access: admin
+
+  MenuItem:
+    properties:
+      - name: name
+        type: string
+      - name: description
+        type: text
+      - name: price
+        type: money
+        options:
+          currency: 'USD'
+      - name: photo
+        type: image
+        options:
+          sizes:
+            thumbnail:
+              width: 200
+              height: 200
+    belongsTo:
+      - name: outpost
+        entity: LunarOutpost
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: public
+      update:
+        - access: admin
+      delete:
+        - access: admin
+
+  LunarRover:
+    properties:
+      - name: name
+        type: string
+      - name: status
+        type: choice
+        options:
+          values: [idle, delivering, charging]
+        default: idle
+    belongsTo:
+      - name: operator
+        entity: User
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: restricted
+          allow: User
+      update:
+        - access: restricted
+          allow: User
+          condition: self # based on operator
+        - access: admin
+      delete:
+        - access: admin
+
+  Order:
+    properties:
+      - name: totalPrice
+        type: money
+        options:
+          currency: 'USD'
+      - name: status
+        type: choice
+        options:
+          values: [placed, preparing, in_transit, delivered, cancelled]
+        default: placed
+      - name: items
+        type: text # Simplified for this example, storing item names as text
+    belongsTo:
+      - name: customer
+        entity: User
+      - name: rover
+        entity: LunarRover
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: restricted
+          allow: User
+          condition: self # based on customer
+      update:
+        - access: restricted
+          allow: User # drivers can update
+        - access: admin
+      delete:
+        - access: admin
+
+
+# Health check endpoint for connection testing
+endpoints:
+  health:
+    path: /api/health
+    method: GET
+    policies: []
+    handler: healthCheck
